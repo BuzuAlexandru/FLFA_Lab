@@ -173,6 +173,7 @@ final state, it returns true.
             return False
 ```
 * Instantiating a Grammar object with the variant 4 details.
+
 ![](images/lab1_img1.png)
 ## Conclusions
 During this laboratory work I have learned a great deal about regular grammars
@@ -189,7 +190,6 @@ all checked for validity by the FA.
 
 ![](images/lab1_img2.png)
 
----
 ![](images/lab1_img3.png)
 
 ## References
