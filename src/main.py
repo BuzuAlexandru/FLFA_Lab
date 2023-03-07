@@ -1,5 +1,7 @@
 from grammar.Grammar import Grammar
 from grammar.Production import Production
+from automata.FiniteAutomaton import FiniteAutomaton
+from automata.Transition import Transition
 
 vn = ['S', 'L', 'D']
 vt = ['a', 'b', 'c', 'd', 'e', 'f', 'j']
@@ -18,18 +20,39 @@ p = [
 ]
 
 grammar = Grammar(vn, vt, p, 'S')
+print(grammar.classify())
 
-automata = grammar.toFiniteAutomaton()
+vn = ['S', 'L', 'D']
+vt = ['a', 'b', 'c', 'd', 'e', 'f', 'j']
+p = [
+    Production('S', 'aa'),
+    Production('S', 'Dc'),
+    Production('S', 'c'),
+    Production('S', 'L'),
+    Production('S', 'e'),
+    Production('L', 'eL'),
+    Production('D', 'De'),
+    Production('D', 'd'),
+]
 
-for i in range(5):
-    word = grammar.generateWord()
-    if automata.wordIsValid(word):
-        print(word, ' valid')
-    else:
-        print(word, ' invalid')
+grammar2 = Grammar(vn, vt, p, 'S')
+print(grammar2.classify())
 
-word = 'bcdef'
-if automata.wordIsValid(word):
-    print(word, ' valid')
-else:
-    print(word, ' invalid')
+q = ['q0', 'q1', 'q2', 'q3']
+a = ['a', 'b']
+t = [
+    Transition('q0', 'a', 'q1'),
+    Transition('q0', 'a', 'q2'),
+    Transition('q1', 'b', 'q1'),
+    Transition('q1', 'a', 'q2'),
+    Transition('q2', 'a', 'q1'),
+    Transition('q2', 'b', 'q3'),
+]
+s = 'q0'
+f = ['q3']
+
+automata = FiniteAutomaton(q, a, t, s, f)
+print('The given automata is a ' + automata.classify())
+automata.toGrammar().toFiniteAutomaton().display()
+# automata.display()
+# automata.toDFA().display()

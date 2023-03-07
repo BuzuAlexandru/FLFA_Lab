@@ -8,6 +8,53 @@ class Grammar:
         self.productions = prod
         self.start = strt
 
+    def classify(self):
+        aux1 = False
+        aux2 = False
+        for i in self.productions:
+            if len(i.leftSide) > 1:
+                aux1 = True
+            if i.rightSide.find('ε') > -1 :
+                aux2 = True
+
+        if aux1 and aux2:
+            return 'Type 0'
+        elif aux1 and not aux2:
+            return 'Type 1'
+
+        c = 0
+        for i in self.productions:
+            c += 1
+            if i.rightSide[0].isupper() and len(i.rightSide) > 1:
+                linearity1 = 'L'
+                break
+            elif i.rightSide[-1].isupper() and len(i.rightSide) > 1:
+                linearity1 = 'R'
+                break
+            elif c == len(self.productions):
+                linearity1 = ''
+
+        for i in self.productions:
+            temp = sum(1 for c in i.rightSide if c.isupper())
+            if temp > 1:
+                return 'Type 2'
+            elif temp == 1 and i.rightSide[0].islower() and i.rightSide[-1].islower():
+                return 'Type 2'
+
+            if i.rightSide[0].isupper() and len(i.rightSide) > 1:
+                linearity2 = 'L'
+            elif i.rightSide[-1].isupper() and len(i.rightSide) > 1:
+                linearity2 = 'R'
+            else:
+                linearity2 = linearity1
+
+            if linearity1 != linearity2:
+                return 'Type 2'
+
+        return 'Type 3'
+
+
+
     def generateWord(self):
         productionDict = {}
         for i in self.productions:
@@ -25,15 +72,12 @@ class Grammar:
 
         return word
     def toFiniteAutomaton(self):
-        finalStates = []
+        finalStates = ['Qf']
         transitions = []
-        c = 0
         for i in self.productions:
             if len(i.rightSide) == 2:
-                transitions.append(Transition(i.leftSide, i.rightSide[1], i.rightSide[0]))
+                transitions.append(Transition(i.leftSide, i.rightSide[0], i.rightSide[1]))
             else:
-                c += 1
-                transitions.append(Transition(i.leftSide, 'q' + str(c), i.rightSide))
-                finalStates.append('q' + str(c))
+                transitions.append(Transition(i.leftSide, i.rightSide, 'Qf'))
 
-        return FiniteAutomaton(self.nonTerminalVar, self.terminalVar, transitions, self.start, finalStates)
+        return FiniteAutomaton(self.nonTerminalVar + finalStates, self.terminalVar, transitions, self.start, finalStates)

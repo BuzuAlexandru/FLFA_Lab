@@ -1,41 +1,87 @@
-from graphviz import Digraph
-import tempfile
+# Laboratory work nr.2
+# Determinism in Finite Automata. Conversion from NDFA 2 DFA. Chomsky Hierarchy.
+### University: Technical University of Moldova
+### Course: Formal Languages & Finite Automata
+### Author: Alexandru Buzu, FAF 212 (variant 4)
 
+---
 
-class FiniteAutomaton:
-    def __init__(self, possible, alphabet, transitions, strt, fin):
-        self.possibleStates = possible
-        self.alphabet = alphabet
-        self.transitions = transitions
-        self.initialState = strt
-        self.finalStates = fin
+## Objectives:
 
-    def wordIsValid(self, word):
-        state = self.initialState
+1. Understand what an automaton is and what it can be used for.
 
-        for i in range(len(word)):
-            if word[i] not in self.alphabet:
-                return False
+2. Continuing the work in the same repository and the same project, the following need to be added:
+    a. Provide a function in the grammar type/class that could classify the grammar based on Chomsky hierarchy.
 
-            for j in self.transitions:
-                if j.currentState == state and j.transitionLabel == word[i]:
-                    if i != len(word) - 1:
-                        state = j.nextState
-                        break
-                    elif i == len(word) - 1 and j.nextState not in self.finalStates:
-                        continue
-                    elif i == len(word) - 1 and j.nextState in self.finalStates:
-                        state = j.nextState
-                        break
+3. According to the variant number (by universal convention it is register ID), get the finite automaton definition and do the following tasks:
 
-            if state in self.finalStates and i != len(word) - 1:
-                return False
+    a. Implement conversion of a finite automaton to a regular grammar.
 
-        if state in self.finalStates:
-            return True
-        else:
-            return False
+    b. Determine whether the FA is deterministic or non-deterministic.
 
+    c. Implement some functionality that would convert an NDFA to a DFA.
+    
+    d. Represent the finite automaton graphically (Optional, and can be considered as a __*bonus point*__):
+     
+
+## Implementation description
+* For the function that classifies the grammar based on Chomsky's 
+hierarchy, I basically split it in two halves, one to differentiate between
+type 0 and 1, and the second one between type 2 and 3.
+  - If at least one production has two or more terminals and/or 
+  non-terminals on the left side and no empty string on the right side,
+  then it's Type 1.
+  - If at least one production has two or more terminals and/or 
+  non-terminals on the left side and empty string is on the right side,
+  then it's Type 0.
+
+```python
+for i in self.productions:
+    if len(i.leftSide) > 1:
+        aux1 = True
+    if i.rightSide.find('ε') > -1 :
+        aux2 = True
+
+if aux1 and aux2:
+    return 'Type 0'
+elif aux1 and not aux2:
+    return 'Type 1'
+```
+* type 2, 1
+```python
+c = 0
+        for i in self.productions:
+            c += 1
+            if i.rightSide[0].isupper() and len(i.rightSide) > 1:
+                linearity1 = 'L'
+                break
+            elif i.rightSide[-1].isupper() and len(i.rightSide) > 1:
+                linearity1 = 'R'
+                break
+            elif c == len(self.productions):
+                linearity1 = ''
+
+        for i in self.productions:
+            temp = sum(1 for c in i.rightSide if c.isupper())
+            if temp > 1:
+                return 'Type 2'
+            elif temp == 1 and i.rightSide[0].islower() and i.rightSide[-1].islower():
+                return 'Type 2'
+
+            if i.rightSide[0].isupper() and len(i.rightSide) > 1:
+                linearity2 = 'L'
+            elif i.rightSide[-1].isupper() and len(i.rightSide) > 1:
+                linearity2 = 'R'
+            else:
+                linearity2 = linearity1
+
+            if linearity1 != linearity2:
+                return 'Type 2'
+
+        return 'Type 3'
+```
+* FA to grammar
+```python
     def toGrammar(self):
         nonTerminal = self.possibleStates
         for i in self.finalStates:
@@ -56,7 +102,9 @@ class FiniteAutomaton:
             nonTerminal[i] = chr(i + 65)
 
         return Grammar(nonTerminal, terminal, production, start)
-
+```
+* determinism
+```python
     def classify(self):
         for i in self.transitions:
             if i.transitionLabel == 'ε':
@@ -68,27 +116,9 @@ class FiniteAutomaton:
                 if count > 1:
                     return 'NFA'
         return 'DFA'
-
-    def display(self):
-        f = Digraph()
-        f.attr(rankdir="LR")
-
-        f.node("Initial", label="", shape="point")
-        f.attr('node', shape='doublecircle')
-        for i in self.finalStates:
-            f.node(i)
-
-        f.attr('node', shape='circle')
-        for i in self.possibleStates:
-            if i not in self.finalStates:
-                f.node(i)
-
-        f.edge("Initial", self.initialState)
-        for i in self.transitions:
-            f.edge(i.currentState, i.nextState, label=i.transitionLabel)
-
-        f.view(tempfile.mktemp('.gv'))
-
+```
+* nfa to dfa
+```python
     def toDFA(self):
         if self.classify() == 'DFA':
             return self
@@ -168,3 +198,37 @@ class FiniteAutomaton:
                                                   str(nfa_dict[transition][tLabel]).replace("'", '')))
 
         return FiniteAutomaton(states, self.alphabet, transitions, str({self.initialState}).replace("'", ''), fStates)
+```
+* represent graphically
+```python
+    def display(self):
+        f = Digraph()
+        f.attr(rankdir="LR")
+
+        f.node("Initial", label="", shape="point")
+        f.attr('node', shape='doublecircle')
+        for i in self.finalStates:
+            f.node(i)
+
+        f.attr('node', shape='circle')
+        for i in self.possibleStates:
+            if i not in self.finalStates:
+                f.node(i)
+
+        f.edge("Initial", self.initialState)
+        for i in self.transitions:
+            f.edge(i.currentState, i.nextState, label=i.transitionLabel)
+
+        f.view(tempfile.mktemp('.gv'))
+```
+
+![]()
+## Screenshots
+
+![]()
+## Conclusions
+
+## References
+* Course lecture "Regular language. Finite automata"
+* https://en.wikipedia.org/wiki/Chomsky_hierarchy
+* https://graphviz.readthedocs.io/en/stable/manual.html
