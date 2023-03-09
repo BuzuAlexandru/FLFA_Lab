@@ -47,7 +47,17 @@ if aux1 and aux2:
 elif aux1 and not aux2:
     return 'Type 1'
 ```
-* type 2, 1
+* If the grammar is not of type 0 or 1, then we proceed to find which t
+type it is between 2 and 3.
+The rules for a grammar to be of type 3 are:
+  * on the right side of production it can only have at most 1 non-terminal
+  symbol and any number of terminal symbols
+  * however, the non-terminal symbol has to be either at the start or end
+  of the right side of production, and it has to be consistently
+  on the same side
+* If the previous 2 rules are not satisfied, then the grammar is of type 2,
+and the rules are implemented below.
+
 ```python
 c = 0
         for i in self.productions:
@@ -80,7 +90,11 @@ c = 0
 
         return 'Type 3'
 ```
-* FA to grammar
+* The function to convert a FA to a grammar is a simple mapping just
+like in the function to convert a grammar to a FA. The defining feature 
+is that final states are removed, and to ensure that the state names
+are compatible with the functions in the grammar class, all state names
+are converted to capital letters, ex. 'q0' becomes 'A'.
 ```python
     def toGrammar(self):
         nonTerminal = self.possibleStates
@@ -103,7 +117,9 @@ c = 0
 
         return Grammar(nonTerminal, terminal, production, start)
 ```
-* determinism
+* To classify a finite automaton, if it has multiple transitions for a 
+given input symbol from a given state or if it has an epsilon transition,
+then it is an NFA, otherwise it is a DFA.
 ```python
     def classify(self):
         for i in self.transitions:
@@ -117,12 +133,17 @@ c = 0
                     return 'NFA'
         return 'DFA'
 ```
-* nfa to dfa
+* To convert from an NFA to a DFA, I use the method taught to us during
+the course. To accomplish that the function first converts the
+transitions into a dictionary of dictionaries, and as example you 
+can see the 'test' dictionary below to visualize what I had in mind.
 ```python
     def toDFA(self):
         if self.classify() == 'DFA':
             return self
-
+        
+        test = {('q0',): {'a': {'q1', 'q2'}, 'b': {}}}
+        
         nfa_dict = {}
         for i in self.possibleStates:
             nfa_dict.update({(i,): {}})
@@ -131,7 +152,15 @@ c = 0
 
         for i in self.transitions:
             nfa_dict[(i.currentState,)][i.transitionLabel].add(i.nextState)
-
+```
+* After that, it continues according to the algorithm. If it finds
+a new state, such as '{q1, q2}', then it converts the set to a tuple
+so it can become a key, adds it to the dictionary as a new state,
+then for each transition label, creates the next state for the transition.
+For example if we had: (q1, a) = {q1, q2}, (q1, b) = q1, (q2, a) = q2, 
+(q2, b) = q1, then we would obtain: ({q1, q2}, a) = {q1, q2} and
+({q1, q2}, b) = q1. 
+```python
         def hasUndefinedStates():
             for x in nfa_dict.values():
                 for y in x.keys():
@@ -140,7 +169,7 @@ c = 0
                         return True
             return False
 
-        test = {('q0',): {'a': {'q1', 'q2'}, 'b': {}}}
+        
         deadState = False
         while hasUndefinedStates():
             temp_dict = {}
@@ -160,7 +189,17 @@ c = 0
                                 temp_dict[tuple(newState)][j].update(nfa_dict[(i,)][j])
 
             nfa_dict.update(temp_dict)
-
+```
+* After that is done, it is only a matter of mapping the data in
+the dictionary into a new FA object. The tuple keys of the dict are 
+converted into sets and then into a string and then added to the
+possible states list and final states list if appropriate. The 
+components of the transitions are also modified where necessary by 
+converting them to strings.
+Any empty set is converted to the dead state 'ϕ'.
+All this is done so the states can be read by the class functions
+and also look nice in the graphical representation.
+```python
         states = []
         fStates = []
         for i in nfa_dict.keys():
@@ -176,7 +215,7 @@ c = 0
             nfa_dict['ϕ'] = {}
             for i in self.alphabet:
                 nfa_dict['ϕ'].update({i: 'ϕ'})
-
+                
         for transition in nfa_dict.values():
             for tLabel in transition.keys():
                 newState = transition[tLabel]
@@ -199,7 +238,11 @@ c = 0
 
         return FiniteAutomaton(states, self.alphabet, transitions, str({self.initialState}).replace("'", ''), fStates)
 ```
-* represent graphically
+* To represent the FA graphically I used the graphviz library. States 
+are turned to nodes and transitions to edges. Final states are represented
+by a double circle, others by just a simple circle, and the graph
+itself is a directed one, so we have arrows between the nodes. The 
+function creates a .pdf file with the graph representation of the FA.
 ```python
     def display(self):
         f = Digraph()
@@ -221,13 +264,100 @@ c = 0
 
         f.view(tempfile.mktemp('.gv'))
 ```
+## Screenshots/ Results
+* For Chomsky classification:
+```python
+vn = ['S', 'L', 'D']
+vt = ['a', 'b', 'c', 'd', 'e', 'f', 'j']
+p = [
+    Production('S', 'aS'),
+    Production('S', 'bS'),
+    Production('S', 'cD'),
+    Production('S', 'dL'),
+    Production('S', 'e'),
+    Production('L', 'eL'),
+    Production('L', 'fL'),
+    Production('L', 'jD'),
+    Production('L', 'e'),
+    Production('D', 'eD'),
+    Production('D', 'd'),
+]
 
-![]()
-## Screenshots
+grammar = Grammar(vn, vt, p, 'S')
+print(grammar.classify())
+```
+Output:
+```
+Type 3
+```
+```python
+vn = ['S', 'L', 'D']
+vt = ['a', 'b', 'c', 'd', 'e', 'f', 'j']
+p = [
+    Production('S', 'aa'),
+    Production('S', 'Dc'),
+    Production('S', 'c'),
+    Production('S', 'L'),
+    Production('S', 'e'),
+    Production('L', 'eL'),
+    Production('D', 'De'),
+    Production('D', 'd'),
+]
 
-![]()
+grammar2 = Grammar(vn, vt, p, 'S')
+print(grammar2.classify())
+```
+Output:
+```
+Type 2
+```
+* For conversion of FA to grammar I convert the given FA to grammar
+then back to FA and then display it, to show that it retains its 
+proprieties.
+```python
+q = ['q0', 'q1', 'q2', 'q3']
+a = ['a', 'b']
+t = [
+    Transition('q0', 'a', 'q1'),
+    Transition('q0', 'a', 'q2'),
+    Transition('q1', 'b', 'q1'),
+    Transition('q1', 'a', 'q2'),
+    Transition('q2', 'a', 'q1'),
+    Transition('q2', 'b', 'q3'),
+]
+s = 'q0'
+f = ['q3']
+
+automata = FiniteAutomaton(q, a, t, s, f)
+print('The given automata is a ' + automata.classify())
+automata.display()
+automata.toGrammar().toFiniteAutomaton().display()
+```
+Output:
+![](images/lab2_nfa.png)
+![](images/lab2_grammar_FA.png)
+* The above code also has the part for the FA classification, and the 
+output is:
+```
+The given automata is a NFA
+```
+* And finally, for the conversion of NFA to DFA.
+```python
+automata.toDFA().display()
+```
+Output:
+![](images/lab2_dfa.png)
 ## Conclusions
-
+During the laboratory work I have recapped a lot of material regarding
+FAs and have implemented in code functions to classify them and convert
+from NFA and DFA. The latter function was the toughest one to implement,
+as I used python dictionaries extensively and I had to do a lot of
+research on the methods that can be used on them. After creating that
+function, I became thankful that I used a class for transitions and 
+not dictionaries, as working with transitions objects is easier and
+much more intuitive. Beside that, the function to find the typing of
+a grammar was also quite finicky to implement as it required a ton of
+conditions and exceptions, especially for type 3.
 ## References
 * Course lecture "Regular language. Finite automata"
 * https://en.wikipedia.org/wiki/Chomsky_hierarchy
