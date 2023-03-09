@@ -334,8 +334,11 @@ automata.display()
 automata.toGrammar().toFiniteAutomaton().display()
 ```
 Output:
+
 ![](images/lab2_nfa.png)
+
 ![](images/lab2_grammar_FA.png)
+
 * The above code also has the part for the FA classification, and the 
 output is:
 ```
@@ -346,7 +349,9 @@ The given automata is a NFA
 automata.toDFA().display()
 ```
 Output:
+
 ![](images/lab2_dfa.png)
+
 ## Conclusions
 During the laboratory work I have recapped a lot of material regarding
 FAs and have implemented in code functions to classify them and convert
