@@ -25,7 +25,8 @@
      
 
 ## Implementation description
-* For the function that classifies the grammar based on Chomsky's 
+### 1. Chomsky Classification 
+For the function that classifies the grammar based on Chomsky's 
 hierarchy, I basically split it in two halves, one to differentiate between
 type 0 and 1, and the second one between type 2 and 3.
   - If at least one production has two or more terminals and/or 
@@ -33,7 +34,7 @@ type 0 and 1, and the second one between type 2 and 3.
   then it's Type 1.
   - If at least one production has two or more terminals and/or 
   non-terminals on the left side and empty string is on the right side,
-  then it's Type 0.
+  then it's Type 0. [1]
 
 ```python
 for i in self.productions:
@@ -47,16 +48,17 @@ if aux1 and aux2:
 elif aux1 and not aux2:
     return 'Type 1'
 ```
-* If the grammar is not of type 0 or 1, then we proceed to find which t
+If the grammar is not of type 0 or 1, then we proceed to find which t
 type it is between 2 and 3.
 The rules for a grammar to be of type 3 are:
-  * on the right side of production it can only have at most 1 non-terminal
+* on the right side of production it can only have at most 1 non-terminal
   symbol and any number of terminal symbols
-  * however, the non-terminal symbol has to be either at the start or end
-  of the right side of production, and it has to be consistently
-  on the same side
-* If the previous 2 rules are not satisfied, then the grammar is of type 2,
-and the rules are implemented below.
+* however, the non-terminal symbol has to be either at the start or end
+of the right side of production, and it has to be consistently
+on the same side
+
+If the previous 2 rules are not satisfied, then the grammar is of type 2,
+and the rules are implemented below. [2]
 
 ```python
 c = 0
@@ -90,7 +92,8 @@ c = 0
 
         return 'Type 3'
 ```
-* The function to convert a FA to a grammar is a simple mapping just
+### 2. FA to Grammar
+The function to convert a FA to a grammar is a simple mapping just
 like in the function to convert a grammar to a FA. The defining feature 
 is that final states are removed, and to ensure that the state names
 are compatible with the functions in the grammar class, all state names
@@ -117,7 +120,8 @@ are converted to capital letters, ex. 'q0' becomes 'A'.
 
         return Grammar(nonTerminal, terminal, production, start)
 ```
-* To classify a finite automaton, if it has multiple transitions for a 
+### 3. Determinism
+To classify a finite automaton, if it has multiple transitions for a 
 given input symbol from a given state or if it has an epsilon transition,
 then it is an NFA, otherwise it is a DFA.
 ```python
@@ -133,7 +137,8 @@ then it is an NFA, otherwise it is a DFA.
                     return 'NFA'
         return 'DFA'
 ```
-* To convert from an NFA to a DFA, I use the method taught to us during
+### 4. NFA to DFA
+To convert from an NFA to a DFA, I use the method taught to us during
 the course. To accomplish that the function first converts the
 transitions into a dictionary of dictionaries, and as example you 
 can see the 'test' dictionary below to visualize what I had in mind.
@@ -153,7 +158,7 @@ can see the 'test' dictionary below to visualize what I had in mind.
         for i in self.transitions:
             nfa_dict[(i.currentState,)][i.transitionLabel].add(i.nextState)
 ```
-* After that, it continues according to the algorithm. If it finds
+After that, it continues according to the algorithm. If it finds
 a new state, such as '{q1, q2}', then it converts the set to a tuple
 so it can become a key, adds it to the dictionary as a new state,
 then for each transition label, creates the next state for the transition.
@@ -190,7 +195,7 @@ For example if we had: (q1, a) = {q1, q2}, (q1, b) = q1, (q2, a) = q2,
 
             nfa_dict.update(temp_dict)
 ```
-* After that is done, it is only a matter of mapping the data in
+After that is done, it is only a matter of mapping the data in
 the dictionary into a new FA object. The tuple keys of the dict are 
 converted into sets and then into a string and then added to the
 possible states list and final states list if appropriate. The 
@@ -238,11 +243,12 @@ and also look nice in the graphical representation.
 
         return FiniteAutomaton(states, self.alphabet, transitions, str({self.initialState}).replace("'", ''), fStates)
 ```
-* To represent the FA graphically I used the graphviz library. States 
+### 5. Graphical Representation of FA
+To represent the FA graphically I used the graphviz library. States 
 are turned to nodes and transitions to edges. Final states are represented
 by a double circle, others by just a simple circle, and the graph
 itself is a directed one, so we have arrows between the nodes. The 
-function creates a .pdf file with the graph representation of the FA.
+function creates a .pdf file with the graph representation of the FA. [3]
 ```python
     def display(self):
         f = Digraph()
@@ -265,7 +271,7 @@ function creates a .pdf file with the graph representation of the FA.
         f.view(tempfile.mktemp('.gv'))
 ```
 ## Screenshots/ Results
-* For Chomsky classification:
+For Chomsky classification:
 ```python
 vn = ['S', 'L', 'D']
 vt = ['a', 'b', 'c', 'd', 'e', 'f', 'j']
@@ -311,7 +317,7 @@ Output:
 ```
 Type 2
 ```
-* For conversion of FA to grammar I convert the given FA to grammar
+For conversion of FA to grammar I convert the given FA to grammar
 then back to FA and then display it, to show that it retains its 
 proprieties.
 ```python
@@ -339,12 +345,12 @@ Output:
 
 ![](images/lab2_grammar_FA.png)
 
-* The above code also has the part for the FA classification, and the 
+The above code also has the part for the FA classification, and the 
 output is:
 ```
 The given automata is a NFA
 ```
-* And finally, for the conversion of NFA to DFA.
+And finally, for the conversion of NFA to DFA.
 ```python
 automata.toDFA().display()
 ```
@@ -364,6 +370,6 @@ much more intuitive. Beside that, the function to find the typing of
 a grammar was also quite finicky to implement as it required a ton of
 conditions and exceptions, especially for type 3.
 ## References
-* Course lecture "Regular language. Finite automata"
-* https://en.wikipedia.org/wiki/Chomsky_hierarchy
-* https://graphviz.readthedocs.io/en/stable/manual.html
+1. Course lecture "Regular language. Finite automata"
+2. https://en.wikipedia.org/wiki/Chomsky_hierarchy
+3. https://graphviz.readthedocs.io/en/stable/manual.html
