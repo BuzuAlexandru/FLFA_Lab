@@ -22,23 +22,25 @@ p = [
     Production('C', 'Ba'),
 ]
 
-vn1 = ['S', 'X' 'A', 'B', 'C', 'D']
-vt1 = ['a', 'b']
+vn1 = ['S', 'A', 'B', 'D', 'Z ']
+vt1 = ['a', 'b', 'd']
 p1 = [
-    Production('S', 'B'),
-    Production('A', 'aX'),
-    Production('A', 'bX'),
-    Production('X', 'ε'),
-    Production('X', 'BX'),
-    Production('X', 'b'),
-    Production('B', 'AXaD'),
-    Production('C', 'Ca'),
-    Production('D', 'aD'),
-    Production('D', 'a'),
+    Production('S', 'dB'),
+    Production('S', 'AB'),
+    Production('A', 'd'),
+    Production('A', 'dS'),
+    Production('A', 'aAaAb'),
+    Production('A', 'ε'),
+    Production('B', 'a'),
+    Production('B', 'aS'),
+    Production('B', 'A'),
+    Production('D', 'Aba'),
 ]
 
 grammar = Grammar(vn, vt, p, 'S')
 grammar1 = Grammar(vn1, vt1, p1, 'S')
 
-cnf = grammar1.ChomskyNormalForm(show_proccess=True)
+grammar1.printGrammar()
+cnf = grammar1.ChomskyNormalForm(show_proccess=False)
+print('After transformation')
 cnf.printGrammar()

@@ -105,6 +105,36 @@ class Grammar:
                     print(rule)
         print(']')
 
+    def isInCNF(self):
+        prod = self.productionToDict()
+
+        for leftSide in prod.keys():
+            inaccessible = True
+            for rule in prod[leftSide]:
+                if not ((len(rule) == 1 and rule.islower()) or (len(rule) == 2 and rule.isupper())):
+
+                    return False
+                if rule == 'ε':
+
+                    return False
+                if rule in self.nonTerminalVar:
+
+                    return False
+
+            if leftSide != self.start:
+                for rules in prod.values():
+                    for rule1 in rules:
+                        if rule1.find(leftSide) != -1:
+                            inaccessible = False
+                            break
+            else: continue
+
+            if inaccessible:
+                return False
+
+        return True
+
+
     def ChomskyNormalForm(self, show_proccess = False):
         prod = self.productionToDict()
         vn = self.nonTerminalVar.copy()
@@ -118,25 +148,29 @@ class Grammar:
         aux = {}
 
         # 1. remove empty productions
-        def rmEmptyProductions(prod_rule, empty):
-            for leftSide in prod.keys():
-                for rule in prod[leftSide]:
-                    if rule.find(prod_rule) != -1:
-                        new_rules = set()
-                        non_empty_symbols = prod_rule.replace(empty, '')
-                        for i in range(len(non_empty_symbols), len(prod_rule)):
-                            all_combinations = set(combinations(prod_rule, i))
-                            for combination in all_combinations:
-                                a = list(non_empty_symbols)
-                                b = list(combination)
-                                test = list((Counter(list(non_empty_symbols)) & Counter(list(combination))).elements())
-                                if test == list(non_empty_symbols):
-                                    new_rules.add(''.join(combination))
+        def createCombinations(prod_rule, leftSide, empty):
+            new_rules = set()
+            non_empty_symbols = prod_rule.replace(empty, '')
+            for i in range(len(non_empty_symbols), len(prod_rule)):
+                all_combinations = set(combinations(prod_rule, i))
+                for combination in all_combinations:
+                    a = list(non_empty_symbols)
+                    b = list(combination)
+                    test = list((Counter(list(non_empty_symbols)) & Counter(list(combination))).elements())
+                    if test == list(non_empty_symbols):
+                        new_rules.add(''.join(combination))
 
-                        if leftSide in aux.keys():
-                            aux[leftSide].update(new_rules)
-                        else:
-                            aux[leftSide] = new_rules
+            if leftSide in aux.keys():
+                aux[leftSide].update(new_rules)
+            else:
+                aux[leftSide] = new_rules
+
+
+        def updateProductions():
+            for leftSide in prod.keys():
+                for key in aux.keys():
+                    if leftSide == key:
+                        prod[leftSide].update(aux[key])
 
 
         for leftSide in prod.keys():
@@ -145,19 +179,11 @@ class Grammar:
                     for leftSide1 in prod.keys():
                         for rule1 in prod[leftSide1]:
                             if len(rule1) > 1 and rule1.find(leftSide) != -1:
-                                rmEmptyProductions(rule1, leftSide)
+                                createCombinations(rule1, leftSide1, leftSide)
+                    updateProductions()
+                    prod[leftSide].discard('ε')
+                    break
 
-        for leftSide in prod.keys():
-            if 'ε' in prod[leftSide]:
-                prod[leftSide].discard('ε')
-
-        def updateProductions():
-            for leftSide in prod.keys():
-                for key in aux.keys():
-                    if leftSide == key:
-                        prod[leftSide].update(aux[key])
-
-        updateProductions()
 
         if show_proccess:
             print('\nAfter removing empty productions')
@@ -279,33 +305,37 @@ class Grammar:
         inverse_prod = {}
 
         for terminal in self.terminalVar:
-            newNT = chr(ord(self.nonTerminalVar[-1]) + 1)
-            while newNT in vn:
+            newNT = 'A'
+            while newNT in vn or not newNT.isalpha() or not newNT.isupper():
                 newNT = chr(ord(newNT) + 1)
 
             prod[newNT] = set([terminal])
             inverse_prod[terminal] = newNT
             vn.append(newNT)
 
-        for rules in prod.values():
-            for rule in rules:
+        for leftSide in prod.keys():
+            rules = prod[leftSide]
+            rules_copy = prod[leftSide].copy()
+            for rule in rules_copy:
                 if len(rule) > 1:
-                    for terminal in inverse_prod.keys():
+                    rules.discard(rule)
+                    new_rule = rule
+                    for terminal in self.terminalVar:
                         if rule.find(terminal) != -1:
-                            rules.discard(rule)
-                            rules.add(rule.replace(terminal, inverse_prod[terminal]))
+                            new_rule = new_rule.replace(terminal, inverse_prod[terminal])
+                    rules.add(new_rule)
 
         rmInaccessibleSymbols()
 
-        def is_in_CNF(prod_dict):
+        def hasLongSequence(prod_dict):
             for leftSide in prod.keys():
                 for rule in prod[leftSide]:
                     if len(rule) > 2:
-                        return False
-            return True
+                        return True
+            return False
 
 
-        while not is_in_CNF(prod):
+        while hasLongSequence(prod):
             prod_copy = prod.copy()
             for leftSide in prod_copy.keys():
                 rules = prod[leftSide]
@@ -323,7 +353,7 @@ class Grammar:
 
                         else:
                             newNT = chr(ord(vn[-1]) + 1)
-                            while newNT in vn:
+                            while newNT in vn or not newNT.isalpha() or not newNT.isupper():
                                 newNT = chr(ord(newNT) + 1)
 
                             vn.append(newNT)
