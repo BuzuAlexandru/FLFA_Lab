@@ -2,9 +2,9 @@ import re
 
 
 def grammar_lexer(code):
-    VN = r'VN *='
-    VT = r'VT *='
-    PRODUCTION = r'P *='
+    VN = r'VN *= *\{'
+    VT = r'VT *= *\{'
+    PRODUCTION = r'P *= *\{'
     RIGHTSIDE = r'→ *[a-zA-Z]+|→ *ε'
     NONTERMINAL = r'[A-Z],|[A-Z]'
     TERMINAL = r'[a-z],|[a-z]'
@@ -24,14 +24,17 @@ def grammar_lexer(code):
         if re.match(SKIP, value):
             continue
         elif re.match(VN, value):
-            tokens.append(('VN',))
+            tokens.append(('VN', 'VN'))
             tokens.append(('OPERATOR', '='))
+            tokens.append(('LBRACE', '{'))
         elif re.match(VT, value):
-            tokens.append(('VT',))
+            tokens.append(('VT', 'VT'))
             tokens.append(('OPERATOR', '='))
+            tokens.append(('LBRACE', '{'))
         elif re.match(PRODUCTION, value):
-            tokens.append(('PRODUCTION',))
+            tokens.append(('PRODUCTION', 'P'))
             tokens.append(('OPERATOR', '='))
+            tokens.append(('LBRACE', '{'))
         elif re.match(RIGHTSIDE, value):
             tokens.append(('OPERATOR', '→'))
             tokens.append(('RIGHTSIDE', value.replace('→', '').replace(' ', '')))
@@ -40,13 +43,13 @@ def grammar_lexer(code):
         elif re.match(TERMINAL, value):
             tokens.append(('TERMINAL', value.replace(',', '')))
         elif re.match(LBRACE, value):
-            tokens.append(('LBRACE',))
+            tokens.append(('LBRACE', '{'))
         elif re.match(RBRACE, value):
-            tokens.append(('RBRACE',))
+            tokens.append(('RBRACE', '}'))
         elif re.match(OPERATOR, value):
             tokens.append(('OPERATOR', value))
 
     if error_test == code:
         return tokens
     else:
-        raise ValueError('Faulty text input')
+        raise ValueError('Lexical error: Faulty text input')
